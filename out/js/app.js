@@ -94,7 +94,7 @@
 			this.fulltime =  this.lastCount;
 			//ベース
 			stageItem.addBase();
-			//
+			//ハンマー
 			stageItem.addHammer();
 			//block
 			for(var v=0; v<stage[i].block; v++){
@@ -147,13 +147,15 @@
 		block: new THREE.Object3D(),
 		base: new THREE.Object3D()
 	};
+	scene.add(itemList.hammer);
+	scene.add(itemList.block);
+	scene.add(itemList.base);
+
 	var phyList ={
 		hammer:null,
 		block:[]
 	};
-	scene.add(itemList.hammer);
-	scene.add(itemList.block);
-	scene.add(itemList.base);
+
 
 	var materials = {
 		base:  new CANNON.Material(),
@@ -167,9 +169,7 @@
 			var hammer = new THREE.Object3D();
 			//ハンマーヘッド
 			var geometry = new THREE.CylinderBufferGeometry( 0.35, 0.35, 2, 27 );
-			var material = new THREE.MeshToonMaterial({
-				color: 0x333333
-			} );
+			var material = new THREE.MeshToonMaterial({ color: 0x333333 } );
 			var cube = new THREE.Mesh( geometry, material );
 			cube.rotation.set(0,0,1.6);
 			hammer.add( cube );
@@ -179,14 +179,16 @@
 			var cube = new THREE.Mesh( geometry, material );
 			cube.position.set(0,0,2);
 			hammer.add( cube );
-			hammer.position.set(0,1.3,10);
 			//当たり判定
 			//var sphereShape = new CANNON.Cylinder(0.12,0.12,1,27);
 			var sphereShape = new CANNON.Box(new CANNON.Vec3(1, 0.5, 0.5));
 			phyList.hammer = new CANNON.Body({mass:0, shape: sphereShape});
 			phyList.hammer.position.set(0,0,-5);
 			world.add(phyList.hammer);
-
+			phyList.hammer.addEventListener("collide", function(e) {
+				console.log(e);
+			});
+			hammer.position.set(0,1.3,10);
 			hammer.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, -5 ) );
 			itemList.hammer.add(hammer);
 			itemList.hammer.rotation.y = 30*(Math.PI/180);
@@ -198,6 +200,7 @@
 		addBlock:function(i){
 			var geometry = new THREE.CylinderBufferGeometry( 1, 1, 1, 27 );
 			var material = new THREE.MeshToonMaterial({
+				//map:new THREE.TextureLoader().load( "images/darumap.png" ),
 				color: 0xff0000
 			});
 			var between = 1.4;
@@ -214,6 +217,7 @@
 			phyList.block[i].linearDamping = 0.01;
 			phyList.block[i].angularDamping = 1;
 			world.add(phyList.block[i]);
+
 		},
 		//ベース追加
 		addBase:function(){
