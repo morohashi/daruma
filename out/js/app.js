@@ -22,7 +22,7 @@
 			game.hammerAnimation = true;
 			itemList.hammer.rotation.y = 30*(Math.PI/180);
 			var tm = new TimelineMax({});
-			tm.to(itemList.hammer.rotation,0.5,{
+			tm.to(itemList.hammer.rotation,0.4,{
 				y:390*(Math.PI/180),
 				ease: Cubic.easeInOut,
 				onComplete:function(){
@@ -59,11 +59,14 @@
 	dom.game.appendChild(renderer.domElement);
 	//物理初期化
 	var world = new CANNON.World();
-	world.gravity.set(0, -9.82, 0);
+	world.gravity.set(0, -1, 0);
 	world.broadphase = new CANNON.NaiveBroadphase();
 	world.solver.iterations = 10;
-	world.solver.tolerance = 0.1;
-	var mass = 1, radius = 1;
+	world.solver.tolerance = 0.000001;
+	world.defaultContactMaterial.contactEquationStiffness = 5e6;
+	world.defaultContactMaterial.contactEquationRelaxation = 3;
+	var mass = 1;
+	//
 
 	//
 	/*//////////////////////////////////////
@@ -97,6 +100,10 @@
 			for(var v=0; v<stage[i].block; v++){
 				stageItem.addBlock(v);
 			}
+			var mat = new CANNON.ContactMaterial(materials.base, materials.block, { friction: 0.0, restitution: 0.0 });
+			world.addContactMaterial(mat);
+			var mat2 = new CANNON.ContactMaterial(materials.block, materials.block, { friction: 0.0, restitution: 0.0 });
+			world.addContactMaterial(mat2);
 			//UI初期化
 			ui.stageNum(i);
 			var o = this;
@@ -148,10 +155,17 @@
 	scene.add(itemList.block);
 	scene.add(itemList.base);
 
+	var materials = {
+		base:  new CANNON.Material(),
+		block: new CANNON.Material()
+	}
+
+
 	var stageItem = {
 		//ハンマー追加
 		addHammer:function(){
 			var hammer = new THREE.Object3D();
+			//ハンマーヘッド
 			var geometry = new THREE.CylinderBufferGeometry( 0.35, 0.35, 2, 27 );
 			var material = new THREE.MeshToonMaterial({
 				color: 0x333333
@@ -159,14 +173,16 @@
 			var cube = new THREE.Mesh( geometry, material );
 			cube.rotation.set(0,0,1.6);
 			hammer.add( cube );
+			//柄
 			var geometry = new THREE.BoxBufferGeometry( 0.2, 0.2, 5 );
-			var material = new THREE.MeshLambertMaterial( {color: 0x333333, wireframe:false} );
+			var material = new THREE.MeshLambertMaterial( {color: 0xf9ba82, wireframe:false} );
 			var cube = new THREE.Mesh( geometry, material );
 			cube.position.set(0,0,2);
 			hammer.add( cube );
 			hammer.position.set(0,1.3,10);
-
-			var sphereShape = new CANNON.Cylinder(0.12,0.12,1,27);
+			//当たり判定
+			//var sphereShape = new CANNON.Cylinder(0.12,0.12,1,27);
+			var sphereShape = new CANNON.Box(new CANNON.Vec3(1, 0.5, 0.5));
 			phyList.hammer = new CANNON.Body({mass:0, shape: sphereShape});
 			phyList.hammer.position.set(0,0,-5);
 			world.add(phyList.hammer);
@@ -184,15 +200,18 @@
 			var material = new THREE.MeshToonMaterial({
 				color: 0xff0000
 			});
-			var between = 1;
+			var between = 1.4;
 			var cylinder = new THREE.Mesh( geometry, material );
 			cylinder.position.set(0,(i+1)*between,0);
 			cylinder.castShadow = true;
 			itemList.block.add(cylinder);
 			//
-			var sphereShape = new CANNON.Cylinder(0.5,0.5,0.5,27);
-			phyList.block[i] = new CANNON.Body({mass: 10, shape: sphereShape});
+			//var sphereShape = new CANNON.Cylinder(0.5,0.5,0.5,27);
+			var sphereShape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5));
+			phyList.block[i] = new CANNON.Body({mass: 3, material: materials.block, shape: sphereShape});
 			phyList.block[i].position.set(0,(i+1)*between,0);
+			phyList.block[i].angularVelocity.set(0, 0, 0);
+			phyList.block[i].linearDamping = 0.01;
 			phyList.block[i].angularDamping = 1;
 			world.add(phyList.block[i]);
 		},
@@ -206,8 +225,7 @@
 			itemList.base.add(cube);
 
 			var shape = new CANNON.Box(new CANNON.Vec3(2.5, 0.5, 2.5));
-
-			var phyBox = new CANNON.Body({mass: 0, shape: shape});
+			var phyBox = new CANNON.Body({mass: 0, material:materials.base, shape: shape});
 			//phyBox.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
 			phyBox.angularDamping = 1;
 			world.add(phyBox);
