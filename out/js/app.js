@@ -171,7 +171,7 @@
 			var geometry = new THREE.CylinderBufferGeometry( 0.35, 0.35, 2, 27 );
 			var material = new THREE.MeshToonMaterial({ color: 0x333333 } );
 			var cube = new THREE.Mesh( geometry, material );
-			cube.rotation.set(0,0,1.6);
+			//cube.rotation.set(0,0,1.6);
 			hammer.add( cube );
 			//柄
 			var geometry = new THREE.BoxBufferGeometry( 0.2, 0.2, 5 );
@@ -183,18 +183,18 @@
 			//var sphereShape = new CANNON.Cylinder(0.12,0.12,1,27);
 			var sphereShape = new CANNON.Box(new CANNON.Vec3(1, 0.5, 0.5));
 			phyList.hammer = new CANNON.Body({mass:0, shape: sphereShape});
-			phyList.hammer.position.set(0,0,-5);
 			world.add(phyList.hammer);
 			phyList.hammer.addEventListener("collide", function(e) {
 				console.log(e);
+				console.log("Collided with body:", e.contact);
 			});
+			phyList.hammer.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), Math.PI / 2);
 			hammer.position.set(0,1.3,10);
 			hammer.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, -5 ) );
+
 			itemList.hammer.add(hammer);
 			itemList.hammer.rotation.y = 30*(Math.PI/180);
 			itemList.hammer.position.set(0,1.3,5.5);
-
-
 		},
 		//ブロック追加
 		addBlock:function(i){
@@ -249,8 +249,8 @@
 				itemList.block.children[i].position.copy(phyList.block[i].position);
 				itemList.block.children[i].quaternion.copy(phyList.block[i].quaternion);
 			}
-			itemList.hammer.children[0].position.copy(phyList.hammer.position);
-			itemList.hammer.children[0].quaternion.copy(phyList.hammer.quaternion);
+			itemList.hammer.children[0].children[0].position.copy(phyList.hammer.position);
+			itemList.hammer.children[0].children[0].quaternion.copy(phyList.hammer.quaternion);
 
 			effect.render(scene,camera);
 		}
