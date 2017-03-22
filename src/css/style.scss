@@ -154,6 +154,21 @@
 			opacity: 1;
 		}
 	}
+	.clear{
+		position: absolute;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		@include fullscreen;
+		opacity: 0;
+		background: rgba(0,0,0,0.7);
+		transition:.4s;
+		pointer-events: none;
+		.status-clear &{
+			pointer-events: auto;
+			opacity: 1;
+		}
+	}
 }
 
 .img{
@@ -242,4 +257,11 @@
 		width: 219px;
 		height: 27px;
 	}
+
+	&#clear{
+		background-position: -244px -201px;
+		width: 90px;
+		height: 26px;
+	}
+
 }

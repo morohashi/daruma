@@ -1,0 +1,1 @@
+{"/Users/morohashidaisuke/Desktop/project/daruma/gulpfile.js":{"sha1":"bafda0282961c1525733c255637d589674897329","tasks":{"serve":{"name":"serve","dependencies":"html sass image js"},"sass":{"name":"sass","dependencies":""},"html":{"name":"html","dependencies":""},"image":{"name":"image","dependencies":""},"js":{"name":"js","dependencies":""}}}}

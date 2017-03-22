@@ -7,7 +7,8 @@
 		gauge : document.getElementById("gauge"),
 		stageNum_ : document.querySelector(".num10"),
 		stageNum : document.querySelector(".num01"),
-		gameover:document.querySelector(".gameover")
+		gameover:document.querySelector(".gameover"),
+		clear:document.querySelector(".clear")
 	};
 
 	//ローディング
@@ -17,6 +18,12 @@
 		document.body.classList.add("titleend");
 		game.play(0);
 	});
+	//クリア画面
+	dom.clear.addEventListener('touchstart',function(e){
+		document.body.classList.remove("status-clear");
+		game.play(game.stageIndex);
+	});
+
 	//ゲームオーバー画面
 	dom.gameover.addEventListener('touchstart',function(e){
 		location.href = "./";
@@ -28,7 +35,7 @@
 			game.push();
 			itemList.hammer.rotation.y = 30*(Math.PI/180);
 			var tm = new TimelineMax({});
-			tm.to(itemList.hammer.rotation,0.4,{
+			tm.to(itemList.hammer.rotation,0.2,{
 				y:390*(Math.PI/180),
 				ease: Cubic.easeInOut,
 				onComplete:function(){
@@ -65,10 +72,10 @@
 	dom.game.appendChild(renderer.domElement);
 	//物理初期化
 	var world = new CANNON.World();
-	world.gravity.set(0, -1, 0);
+	world.gravity.set(0, -40, 0);
 	world.broadphase = new CANNON.NaiveBroadphase();
-	world.solver.iterations = 50;
-	world.solver.tolerance = 0.000001;
+	world.solver.iterations = 10;
+	world.solver.tolerance = 0.1;
 	world.defaultContactMaterial.contactEquationStiffness = 5e6;
 	world.defaultContactMaterial.contactEquationRelaxation = 3;
 	var mass = 1;
@@ -86,25 +93,61 @@
 		{
 			lasttime : 10,
 			block : 5
+		},
+		{
+			lasttime : 10,
+			block : 15
+		},
+		{
+			lasttime : 10,
+			block : 25
+		},
+		{
+			lasttime : 10,
+			block : 35
+		},
+		{
+			lasttime : 10,
+			block : 45
+		},
+		{
+			lasttime : 10,
+			block : 55
 		}
+
+
 	];
 
 	var game = {
 		time:null,
 		isPlay:false,
+		isClear:false,
 		hammerAnimation:false,
+		stageIndex:0,
 		lastCount:0,
 		fulltime:0,
 		blockCount:0,
 		pushBlockCount:0,
 		play:function(i){
+			this.pushBlockCount = 0;
 			this.lastCount = stage[i].lasttime * 60;
 			this.fulltime =  this.lastCount;
+			this.isClear = false;
 			//ベース
-			stageItem.addBase();
+			if(itemList.base.children.length==0){
+				stageItem.addBase();
+			}
 			//ハンマー
-			stageItem.addHammer();
+			if(itemList.hammer.children.length==0){
+				stageItem.addHammer();
+			}
 			//block
+			if(itemList.block.children.length != 0){
+				console.log("aaa");
+				scene.remove(itemList.block);
+				itemList.block = new THREE.Object3D();
+				scene.add(itemList.block);
+			}
 			for(var v=0; v<stage[i].block; v++){
 				stageItem.addBlock(v);
 			}
@@ -130,14 +173,20 @@
 					clearInterval(o.time);
 					o.end();
 				}
+				if(o.isClear){
+					clearInterval(o.time);
+				}
 			},1000/60);
 		},
 		push:function(){
 			var o = this;
 			setTimeout(function(){
-				phyList.block[o.pushBlockCount].applyImpulse(new CANNON.Vec3(-30, 0, -45), phyList.block[o.pushBlockCount].position);
+				phyList.block[o.pushBlockCount].applyImpulse(new CANNON.Vec3(-150, 0, -150), phyList.block[o.pushBlockCount].position);
 				o.pushBlockCount++;
-			},200);
+				if(o.pushBlockCount >= o.blockCount){
+					o.clear();
+				}
+			},50);
 		},
 		end:function(){
 			console.log("ゲームオーバー");
@@ -145,6 +194,14 @@
 		},
 		clear:function(){
 			console.log("クリア");
+			this.isClear = true;
+			document.body.classList.add("status-clear");
+			this.stageIndex++;
+
+			if(stage.length <= this.stageIndex){
+				this.stageIndex = 0;
+			}
+			console.log(this.stageIndex);
 		},
 		reset:function(){
 		}
@@ -201,9 +258,11 @@
 			var sphereShape = new CANNON.Box(new CANNON.Vec3(1, 0.5, 0.5));
 			phyList.hammer = new CANNON.Body({mass:0, shape: sphereShape});
 			phyList.hammer.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), Math.PI / 2);
+			/*
 			phyList.hammer.addEventListener("collide", function(e) {
 				console.log(e);
 			});
+			*/
 			world.add(phyList.hammer);
 
 			//hammer.position.set(0,1.3,10);
@@ -275,3 +334,20 @@
 	render();
 
 }());
+(function(win, doc) {
+    "use strict";
+    var tapFlag = false,
+        timer;
+    doc.body.addEventListener("touchstart", function(evt) {
+        if (tapFlag) {
+            evt.preventDefault();
+        }
+    }, true);
+    doc.body.addEventListener("touchend", function(evt) {
+        tapFlag = true;
+        clearTimeout(timer);
+        timer = setTimeout(function() {
+            tapFlag = false;
+        }, 200); // 100だと短い、150だとやや短い
+    }, true);
+})(window, document);
