@@ -13,6 +13,7 @@
 	position: fixed;
 	display: flex;
 	@include fullscreen;
+	user-select: none;
 	//ゲーム
 	#game{
 		position: fixed;
@@ -136,12 +137,29 @@
 			pointer-events: none;
 		}
 	}
+
+	//げーむおーばー
+	.gameover{
+		position: absolute;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		@include fullscreen;
+		opacity: 0;
+		background: rgba(0,0,0,0.7);
+		transition:.4s;
+		pointer-events: none;
+		.status-gameover &{
+			pointer-events: auto;
+			opacity: 1;
+		}
+	}
 }
 
 .img{
 	display: block;
 	background: url("../images/asset.png") no-repeat;
-	background-size: 609px 196px;
+	background-size: 609px 238px;
 	&#logo{
 		background-position: 0 0;
 		width: 334px;
@@ -217,5 +235,11 @@
 		background-position: -452px -74px;
 		width: 97px;
 		height: 97px;
+	}
+
+	&#gameover{
+		background-position: -4px -200px;
+		width: 219px;
+		height: 27px;
 	}
 }

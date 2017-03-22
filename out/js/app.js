@@ -6,7 +6,8 @@
 		game: document.getElementById("game"),
 		gauge : document.getElementById("gauge"),
 		stageNum_ : document.querySelector(".num10"),
-		stageNum : document.querySelector(".num01")
+		stageNum : document.querySelector(".num01"),
+		gameover:document.querySelector(".gameover")
 	};
 
 	//ローディング
@@ -16,10 +17,15 @@
 		document.body.classList.add("titleend");
 		game.play(0);
 	});
+	//ゲームオーバー画面
+	dom.gameover.addEventListener('touchstart',function(e){
+		location.href = "./";
+	});
 	//打ボタン設定
 	dom.shot.addEventListener('touchstart',function(e){
 		if(game.isPlay && !game.hammerAnimation){
 			game.hammerAnimation = true;
+			game.push();
 			itemList.hammer.rotation.y = 30*(Math.PI/180);
 			var tm = new TimelineMax({});
 			tm.to(itemList.hammer.rotation,0.4,{
@@ -61,7 +67,7 @@
 	var world = new CANNON.World();
 	world.gravity.set(0, -1, 0);
 	world.broadphase = new CANNON.NaiveBroadphase();
-	world.solver.iterations = 10;
+	world.solver.iterations = 50;
 	world.solver.tolerance = 0.000001;
 	world.defaultContactMaterial.contactEquationStiffness = 5e6;
 	world.defaultContactMaterial.contactEquationRelaxation = 3;
@@ -89,6 +95,8 @@
 		hammerAnimation:false,
 		lastCount:0,
 		fulltime:0,
+		blockCount:0,
+		pushBlockCount:0,
 		play:function(i){
 			this.lastCount = stage[i].lasttime * 60;
 			this.fulltime =  this.lastCount;
@@ -100,6 +108,7 @@
 			for(var v=0; v<stage[i].block; v++){
 				stageItem.addBlock(v);
 			}
+			this.blockCount = stage[i].block;
 			var mat = new CANNON.ContactMaterial(materials.base, materials.block, { friction: 0.0, restitution: 0.0 });
 			world.addContactMaterial(mat);
 			var mat2 = new CANNON.ContactMaterial(materials.block, materials.block, { friction: 0.0, restitution: 0.0 });
@@ -123,8 +132,16 @@
 				}
 			},1000/60);
 		},
+		push:function(){
+			var o = this;
+			setTimeout(function(){
+				phyList.block[o.pushBlockCount].applyImpulse(new CANNON.Vec3(-30, 0, -45), phyList.block[o.pushBlockCount].position);
+				o.pushBlockCount++;
+			},200);
+		},
 		end:function(){
 			console.log("ゲームオーバー");
+			document.body.classList.add("status-gameover");
 		},
 		clear:function(){
 			console.log("クリア");
@@ -183,13 +200,13 @@
 			//var sphereShape = new CANNON.Cylinder(0.12,0.12,1,27);
 			var sphereShape = new CANNON.Box(new CANNON.Vec3(1, 0.5, 0.5));
 			phyList.hammer = new CANNON.Body({mass:0, shape: sphereShape});
-			world.add(phyList.hammer);
+			phyList.hammer.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), Math.PI / 2);
 			phyList.hammer.addEventListener("collide", function(e) {
 				console.log(e);
-				console.log("Collided with body:", e.contact);
 			});
-			phyList.hammer.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), Math.PI / 2);
-			hammer.position.set(0,1.3,10);
+			world.add(phyList.hammer);
+
+			//hammer.position.set(0,1.3,10);
 			hammer.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, -5 ) );
 
 			itemList.hammer.add(hammer);
