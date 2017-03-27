@@ -143,8 +143,10 @@
 			}
 			//block
 			if(itemList.block.children.length != 0){
-				console.log("aaa");
 				scene.remove(itemList.block);
+				for(var v =0;v<phyList.block.length;v++){
+					world.remove(phyList.block[v]);
+				}
 				itemList.block = new THREE.Object3D();
 				scene.add(itemList.block);
 			}
