@@ -180,6 +180,9 @@
 		width: 334px;
 		height: 148px;
 		margin: 20px auto 0;
+		@media screen and (max-width:320px) {
+			zoom:0.85;
+		}
 	}
 	&#start{
 		background-position: 0 -152px;
