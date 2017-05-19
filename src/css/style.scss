@@ -9,6 +9,10 @@
 	margin: 0;
 	padding: 0;
 }
+body{
+	-webkit-touch-callout:none;
+	-webkit-user-select:none;
+}
 #window{
 	position: fixed;
 	display: flex;
