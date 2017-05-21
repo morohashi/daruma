@@ -1,6 +1,6 @@
 (function(){
 	//デバッグ
-	isDebug = true;
+	isDebug = false;
 	//DOM
 	var dom = {
 		title : document.getElementById("title"),
@@ -80,6 +80,19 @@
 	scene.add( light );
 	var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.2 );
 	scene.add( directionalLight );
+	spotLight = new THREE.SpotLight( 0xffffff, 0.2 );
+	spotLight.position.set( -2, 10, 3 );
+	spotLight.castShadow = true;
+	spotLight.angle = 0.30;
+	spotLight.penumbra = 0.5;
+	spotLight.decay = 2;
+	spotLight.distance = 20;
+	spotLight.shadow.mapSize.width = 1024;
+	spotLight.shadow.mapSize.height = 1024;
+	spotLight.shadow.camera.near = 8;
+	spotLight.shadow.camera.far = 10;
+	scene.add( spotLight );
+
 	//レンダラー
 	var renderer = new THREE.WebGLRenderer({
 		alpha:true,
@@ -100,13 +113,9 @@
 	world.solver.iterations = 10;
 	world.solver.tolerance = 0.1;
 	world.defaultContactMaterial.contactEquationStiffness = 5e6;
-	world.defaultContactMaterial.contactEquationRelaxation = 3;
-	var mass = 1;
-	//
+	world.defaultContactMaterial.contactEquationRelaxation = 3;	//
 	var cannonDebugRenderer = new THREE.CannonDebugRenderer( scene, world );
-	//
 
-	//
 	/*//////////////////////////////////////
 	///////////////////////////////////////*/
 	var state = {
@@ -116,12 +125,12 @@
 	var stage = [
 		//ステージ1
 		{
-			lasttime : 10,
-			block : 5
+			lasttime : 3,
+			block : 3
 		},
 		{
-			lasttime : 10,
-			block : 15
+			lasttime : 5,
+			block : 5
 		},
 		{
 			lasttime : 10,
@@ -129,7 +138,7 @@
 		},
 		{
 			lasttime : 10,
-			block : 35
+			block : 20
 		},
 		{
 			lasttime : 10,
@@ -139,8 +148,6 @@
 			lasttime : 10,
 			block : 55
 		}
-
-
 	];
 
 	var game = {
@@ -153,11 +160,15 @@
 		fulltime:0,
 		blockCount:0,
 		pushBlockCount:0,
+		headStatus:null,
 		play:function(i){
+			this.isPlay = true;
 			this.pushBlockCount = 0;
 			this.lastCount = stage[i].lasttime * 60;
 			this.fulltime =  this.lastCount;
 			this.isClear = false;
+			this.deathCount = 0;
+			clearTimeout(this.headStatus);
 			//ベース
 			if(itemList.base.children.length==0){
 				stageItem.addBase();
@@ -175,7 +186,6 @@
 				itemList.block = new THREE.Object3D();
 				scene.add(itemList.block);
 			}
-			console.log(stage[i].block);
 			for(var v=0; v<stage[i].block; v++){
 				if(v==stage[i].block-1){
 					stageItem.addHeadBlock(v);
@@ -184,9 +194,9 @@
 				}
 			}
 			this.blockCount = stage[i].block;
-			var mat = new CANNON.ContactMaterial(materials.base, materials.block, { friction: 0.01, restitution: 0.00000001});
+			var mat = new CANNON.ContactMaterial(materials.base, materials.block, { friction: 0.01, restitution: 0});
 			world.addContactMaterial(mat);
-			var mat2 = new CANNON.ContactMaterial(materials.block, materials.block, { friction: 0.00000001, restitution: 0.0});
+			var mat2 = new CANNON.ContactMaterial(materials.block, materials.block, { friction: 0, restitution: 0.0});
 			world.addContactMaterial(mat2);
 			var mat3 = new CANNON.ContactMaterial(materials.hammer, materials.block, { friction: 10.0, restitution: 0.0, frictionEquationRelaxation:0, contactEquationRelaxation:0 });
 			world.addContactMaterial(mat3);
@@ -199,7 +209,6 @@
 			},1000);
 		},
 		update:function(){
-			return;
 			var o = this;
 			this.time = setInterval(function(){
 				o.lastCount--;
@@ -213,32 +222,31 @@
 				}
 			},1000/60);
 		},
-		push:function(){
-			var o = this;
-			setTimeout(function(){
-				phyList.block[o.pushBlockCount].applyImpulse(new CANNON.Vec3(-150, 0, -150), phyList.block[o.pushBlockCount].position);
-				o.pushBlockCount++;
-				if(o.pushBlockCount >= o.blockCount){
-					o.clear();
-				}
-			},50);
-		},
 		end:function(){
-			console.log("ゲームオーバー");
+			if(this.isClear){
+				return;
+			}
+			this.stop();
 			document.body.classList.add("status-gameover");
 		},
 		clear:function(){
-			console.log("クリア");
+			if(this.isClear){
+				return;
+			}
 			this.isClear = true;
+			this.stop();
 			document.body.classList.add("status-clear");
 			this.stageIndex++;
-
 			if(stage.length <= this.stageIndex){
 				this.stageIndex = 0;
 			}
-			console.log(this.stageIndex);
+		},
+		stop:function(){
+			this.isPlay = false;
+			clearInterval(this.time);
 		},
 		reset:function(){
+
 		}
 	};
 
@@ -272,7 +280,6 @@
 		hammer: new CANNON.Material()
 	}
 
-
 	var stageItem = {
 		//ハンマー追加
 		addHammer:function(){
@@ -303,9 +310,12 @@
 		//ブロック追加
 		addBlock:function(i){
 			var geometry = new THREE.CylinderBufferGeometry( 1, 1, 1, 27 );
+			/*
 			var material = new THREE.MeshToonMaterial({
 				color: 0xff0000
 			});
+			*/
+			material = new THREE.MeshPhongMaterial({ color: 0xff0000, shininess:25 });
 			var between = 1.4;
 			var cylinder = new THREE.Mesh( geometry, material );
 			cylinder.position.set(0,(i+1)*between,0);
@@ -331,6 +341,7 @@
 			var cylinder = new THREE.Mesh( geometry, material );
 			cylinder.position.set(0,(i+1)*between,0);
 			cylinder.castShadow = true;
+			cylinder.name = "head";
 			itemList.block.add(cylinder);
 			//
 			//var sphereShape = new CANNON.Cylinder(0.8,0.8,1,27);
@@ -342,10 +353,15 @@
 			phyList.block[i].linearDamping = 0.01;
 			phyList.block[i].angularDamping = 1;
 			world.add(phyList.block[i]);
-			phyList.block[i]..addEventListener("collide", function(e) {
+			phyList.block[i].addEventListener("collide", function(e) {
 				if(e.contact.bi.name == "base"){
-					bakuCollideText();
-					d.bakuBody.isAnimation = false;
+					game.headStatus = setTimeout(function(){
+						if(game.deathCount==itemList.block.children.length-1){
+							game.clear();
+						}else{
+							game.end();
+						}
+					},500);
 				}
 			});
 		},
@@ -378,9 +394,14 @@
 				//console.log(itemList.block.children[i]);
 				itemList.block.children[i].position.copy(phyList.block[i].position);
 				itemList.block.children[i].quaternion.copy(phyList.block[i].quaternion);
+				if(itemList.block.children[i].position.y <= -1 && !itemList.block.children[i].death){
+					game.deathCount++;
+					itemList.block.children[i].death = true;
+					if(itemList.block.children[i].name == "head"){
+						game.end();
+					}
+				}
 			}
-			//itemList.hammer.children[0].children[0].position.copy(phyList.hammer.position);
-			//itemList.hammer.children[0].children[0].quaternion.copy(phyList.hammer.quaternion);
 			if(isDebug){
 				cannonDebugRenderer.update();
 			}
